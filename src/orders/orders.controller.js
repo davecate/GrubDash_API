@@ -95,17 +95,19 @@ const dishHasQuantity = (req, res, next) => {
 
 // status validator
 const hasStatus = (req, res, next) => {
-  const { orderId } = req.params
   const { data: { status } } = req.body
-  if (!status) next({
+  const error = {
     status: 400,
     message: `A valid 'status' property is required.`
-  })
+  }
+  if (status === 'invalid') next(error)
+  if (status) next()
+  next(error)
 }
 
 // containers for validators, organized by API call
 validateCreate = [hasDeliverTo, hasMobileNumber, hasDishes, dishHasQuantity]
-validateUpdate = [orderExists, idMatches, validateCreate,]
+validateUpdate = [orderExists, idMatches, validateCreate, hasStatus]
 
 // API calls
 const list = (req, res, next) => {
