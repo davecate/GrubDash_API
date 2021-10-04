@@ -10,7 +10,7 @@ router
 
 router
   .route("/:orderId")
-  .get()
+  .get(controller.read)
   .put(controller.update)
   .all(methodNotAllowed)
 

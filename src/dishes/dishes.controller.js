@@ -14,7 +14,10 @@ const dishExists = (req, res, next) => {
     res.locals.dish = foundDish
     return next()
   }
-  next({status: 404, message: `Dish id not found: ${req.params.dishId}`,})
+  next({
+    status: 404, 
+    message: `Dish id not found: ${req.params.dishId}`,
+  })
 }
 
 // validation for dish properties
