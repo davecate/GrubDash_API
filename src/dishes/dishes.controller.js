@@ -22,12 +22,15 @@ const dishExists = (req, res, next) => {
 
 // validation for dish properties
 // id validator
-const dishIdMatches = (req, res, next) => {
+const idMatches = (req, res, next) => {
   const dishId = req.params.dishId
   const { data: { id } } = req.body
   if (dishId === id) next()
   if (!id) next()
-  next({ status: 400, message: `Invalid dish id: ${id}. A dish's id must match its url` })
+  next({ 
+    status: 400, 
+    message: `Invalid dish id: ${id}. A dish's id must match its url` 
+  })
 }
 
 // name validator
@@ -68,7 +71,7 @@ const priceIsRight = (req, res, next) => {
 
 // containers for validators, organized by API call
 validateCreate = [hasName, hasDesc, hasImgUrl, priceIsRight]
-validateUpdate = [dishExists, dishIdMatches, validateCreate]
+validateUpdate = [dishExists, idMatches, validateCreate]
 
 // API calls
 // get all dishes

@@ -8,7 +8,7 @@ const nextId = require("../utils/nextId");
 
 // order exists validator
 const orderExists = (req, res, next) => {
-  const orderId = req.params.orderId
+  const { orderId } = req.params
   const foundOrder = orders.find((order) => order.id === orderId)
   if (foundOrder) {
     res.locals.order = foundOrder
@@ -16,11 +16,23 @@ const orderExists = (req, res, next) => {
   }
   next({
     status: 404, 
-    message: `Dish id not found: ${req.params.dishId}`,
+    message: `Order id not found: ${orderId}`,
   })
 }
 
-// validation for order properties
+// all validation for order properties
+// id validator
+const idMatches = (req, res, next) => {
+  const orderId = req.params.orderId
+  const { data: { id } } = req.body
+  if (orderId === id) next()
+  if (!id) next()
+  next({ 
+    status: 400, 
+    message: `Invalid order id: ${id}. An order's id must match its url.` 
+  })
+}
+
 // address (deliverTo) validator
 const hasDeliverTo = (req, res, next) => {
   const { data: { deliverTo } = {} } = req.body
@@ -73,7 +85,7 @@ const dishHasQuantity = (req, res, next) => {
     if (Number.isInteger(quantity) === false) {
       next({
         status: 400,
-        message: "Dear Thinkful: What does the index of the dish (2) have to do with the quantity being an integer or not? Please write better tests. Thanks."
+        message: `Dish located at dishes[${dishes.indexOf(dish)}] has an invalid quantity.`
       })
     }
   }
@@ -81,10 +93,21 @@ const dishHasQuantity = (req, res, next) => {
   next()
 }
 
+// status validator
+const hasStatus = (req, res, next) => {
+  const { orderId } = req.params
+  const { data: { status } } = req.body
+  if (!status) next({
+    status: 400,
+    message: `A valid 'status' property is required.`
+  })
+}
+
 // containers for validators, organized by API call
 validateCreate = [hasDeliverTo, hasMobileNumber, hasDishes, dishHasQuantity]
-validateUpdate = [orderExists, validateCreate]
+validateUpdate = [orderExists, idMatches, validateCreate,]
 
+// API calls
 const list = (req, res, next) => {
   res.json( { data: orders } )
 }
@@ -107,11 +130,28 @@ const create = (req, res, next) => {
 }
 
 const update = (req, res, next) => {
-  next()
+  let { order } = res.locals
+  let { data: { id, deliverTo, mobileNumber, status, dishes } } = req.body
+  id = res.locals.order.id
+  order = { id, deliverTo, mobileNumber, status, dishes }
+  res.json({ data: order })
 }
 
 const destroy = (req, res, next) => {
-  next()
+  const { orderId } = req.params
+  const order = res.locals.order
+  console.log(order)
+  const index = orders.findIndex((order) => order.id === orderId);
+  if (index > -1) {
+    orders.splice(index, 1);
+  }
+  if (order.status === "pending") {
+    res.sendStatus(204)
+  }
+  next({
+    status: 400,
+    message: `Order status must be 'pending'`
+  })
 }
 
 module.exports = {
@@ -119,5 +159,5 @@ module.exports = {
   read: [orderExists, read],
   create: [validateCreate, create],
   update: [validateUpdate, update],
-  destroy: [destroy],
+  destroy: [orderExists, destroy],
 }
