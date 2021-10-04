@@ -6,34 +6,104 @@ const orders = require(path.resolve("src/data/orders-data"));
 // Use this function to assigh ID's when necessary
 const nextId = require("../utils/nextId");
 
-// TODO: Implement the /orders handlers needed to make the tests pass
+// validation for order properties
+// address (deliverTo) validator
+const hasDeliverTo = (req, res, next) => {
+    const { data: { deliverTo } = {} } = req.body
+    if (deliverTo) next()
+    next({ status: 400, message: "A 'deliverTo' property is required." })
+}
 
-// middleware goes here
+// mobile number validator
+const hasMobileNumber = (req, res, next) => {
+  const { data: { mobileNumber } = {} } = req.body
+  if (mobileNumber) next()
+  next({ status: 400, message: "A 'mobileNumber' property is required." })
+}
 
-// const list = (req, res, next) => {
-  
-// }
+// dishes validator
+const hasDishes = (req, res, next) => {
+  const { data: { dishes } = {} } = req.body
+  if (!dishes || !dishes.length || Array.isArray(dishes) === false) {
+    next({ 
+      status: 400, 
+      message: "A 'dishes' property is required." 
+    })
+  }
+  next()
+}
 
-// const read = (req, res, next) => {
-  
-// }
+// dish quantity validator
+const dishHasQuantity = (req, res, next) => {
+  const { data: { dishes } } = req.body
 
-// const create = (req, res, next) => {
-  
-// }
+  for (dish of dishes) {
+    const error = { 
+        status: 400, 
+        message: `A valid 'quantity' property of 1 or more is required for each dish.`
+      }
+    const { message } = error
+    const quantity = dish.quantity
 
-// const update = (req, res, next) => {
-  
-// }
+    if (quantity === 0) {
+      next({
+        status: 400,
+        message: message + ` ${quantity} is not valid.`
+    })
+    }
 
-// const destroy = (req, res, next) => {
-  
-// }
+    if (!quantity) {
+      next(error)
+    }
 
-// module.exports = {
-//   list,
-//   read: [read],
-//   create: [create],
-//   update: [update],
-//   destroy: [destroy],
-// }
+    if (Number.isInteger(quantity) === false) {
+      next({
+        status: 400,
+        message: "What does the number 2 have to do with the quantity being an interger or not?"
+      })
+    }
+  }
+
+  next()
+}
+
+// containers for validators, organized by API call
+validateCreate = [hasDeliverTo, hasMobileNumber, hasDishes, dishHasQuantity]
+validateUpdate = [validateCreate]
+
+const list = (req, res, next) => {
+  res.json( { data: orders } )
+}
+
+const read = (req, res, next) => {
+  next()
+}
+
+const create = (req, res, next) => {
+  const { data: { deliverTo, mobileNumber, status, dishes, } = {} } = req.body
+  const newOrder = {
+    id: nextId(),
+    deliverTo,
+    mobileNumber,
+    status,
+    dishes,
+  }
+  orders.push(newOrder)
+  res.status(201).json( { data: newOrder } )
+}
+
+const update = (req, res, next) => {
+  next()
+}
+
+const destroy = (req, res, next) => {
+  next()
+}
+
+module.exports = {
+  list,
+  read: [read],
+  create: [validateCreate, create],
+  update: [validateUpdate, update],
+  destroy: [destroy],
+}

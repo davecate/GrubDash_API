@@ -6,10 +6,6 @@ const dishes = require(path.resolve("src/data/dishes-data"));
 // Use this function to assign ID's when necessary
 const nextId = require("../utils/nextId");
 
-// TODO: Implement the /dishes handlers needed to make the tests pass
-
-// TODO: Implement the /orders handlers needed to make the tests pass
-
 // dish exists validator
 const dishExists = (req, res, next) => {
   const dishId = req.params.dishId
@@ -45,7 +41,7 @@ const hasDesc = (req, res, next) => {
   next( { status: 400, message: "A 'description' property is required." } )
 }
 
-// img dish validator
+// img url validator
 const hasImgUrl = (req, res, next) => {
   const { data: { image_url } = {} } = req.body
   if (!image_url) next( { 
@@ -66,6 +62,10 @@ const priceIsRight = (req, res, next) => {
   if (price <= 0) next(priceIsWrong)
   next()
 }
+
+// containers for validators, organized by API call
+validateCreate = [hasName, hasDesc, hasImgUrl, priceIsRight]
+validateUpdate = [dishExists, dishIdMatches, validateCreate]
 
 // API calls
 // get all dishes
@@ -101,15 +101,9 @@ const update = (req, res, next) => {
   res.json({ data: dish })
 }
 
-// delete a dish
-const destroy = (req, res, next) => {
-  
-}
-
 module.exports = {
   list,
   read: [dishExists, read],
-  create: [hasName, hasDesc, hasImgUrl, priceIsRight, create],
-  update: [dishExists, dishIdMatches, hasName, hasDesc, hasImgUrl, priceIsRight, update],
-  destroy: [destroy],
+  create: [validateCreate, create],
+  update: [validateUpdate, update],
 }
