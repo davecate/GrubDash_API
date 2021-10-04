@@ -10,7 +10,7 @@ router
 
 router
   .route("/:dishId")
-  .get()
+  .get(controller.read)
   .put()
   .all(methodNotAllowed)
 
