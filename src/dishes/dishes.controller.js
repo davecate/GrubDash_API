@@ -10,6 +10,7 @@ const nextId = require("../utils/nextId");
 
 // TODO: Implement the /orders handlers needed to make the tests pass
 
+// dish exists validator
 const dishExists = (req, res, next) => {
   const dishId = req.params.dishId
   const foundDish = dishes.find((dish) => dish.id === dishId)
@@ -21,6 +22,15 @@ const dishExists = (req, res, next) => {
 }
 
 // validation for dish properties
+// id validator
+const dishIdMatches = (req, res, next) => {
+  const dishId = req.params.dishId
+  const { data: { id } } = req.body
+  if (dishId === id) next()
+  if (!id) next()
+  next({ status: 400, message: `Invalid dish id: ${id}. A dish's id must match its url` })
+}
+
 // name validator
 const hasName = (req, res, next) => {
   const { data: { name } = {} } = req.body
@@ -32,23 +42,29 @@ const hasName = (req, res, next) => {
 const hasDesc = (req, res, next) => {
   const { data: { description } = {} } = req.body
   if (description) next()
-  next({ status: 400, message: "A 'description' property is required." })
+  next( { status: 400, message: "A 'description' property is required." } )
 }
 
 // img dish validator
 const hasImgUrl = (req, res, next) => {
   const { data: { image_url } = {} } = req.body
-  if (image_url) next()
-  next({ status: 400, message: "An 'image_url' property is required." })
+  if (!image_url) next( { 
+    status: 400, 
+    message: "An 'image_url' property is required." 
+  } )
+  next()
 }
 
 // price validator
 const priceIsRight = (req, res, next) => {
   const { data: { price } = {} } = req.body
-  const priceIsWrong = { status: 400, message: "A 'price' property greater than 0 is required." }
-  if (price > 0) next()
-  if (price === NaN) next(priceIsWrong)
-  next(priceIsWrong)
+  const priceIsWrong = { 
+    status: 400, 
+    message: "A 'price' property greater than 0 is required." 
+  }
+  if (typeof price !== 'number') next(priceIsWrong)
+  if (price <= 0) next(priceIsWrong)
+  next()
 }
 
 // API calls
@@ -78,7 +94,11 @@ const create = (req, res, next) => {
 
 // put: update a dish
 const update = (req, res, next) => {
-  
+  let dish = res.locals.dish
+  let { data: { id, name, description, price, image_url } = {} } = req.body
+  id = res.locals.dish.id
+  dish = { id, name, description, price, image_url }
+  res.json({ data: dish })
 }
 
 // delete a dish
@@ -90,6 +110,6 @@ module.exports = {
   list,
   read: [dishExists, read],
   create: [hasName, hasDesc, hasImgUrl, priceIsRight, create],
-  update: [update],
+  update: [dishExists, dishIdMatches, hasName, hasDesc, hasImgUrl, priceIsRight, update],
   destroy: [destroy],
 }
