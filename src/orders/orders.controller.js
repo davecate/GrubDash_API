@@ -130,20 +130,21 @@ const statusIsPending = (req, res, next) => {
 // containers for validators, organized by handler
 const validateCreate = [hasDeliverTo, hasMobileNumber, hasDishes, dishHasQuantity]
 const validateUpdate = [orderExists, idMatches, validateCreate, hasStatus]
+const validateDestroy = [orderExists, statusIsPending]
 
 // API call handlers
 // get all orders
-const list = (req, res, next) => {
+const list = (req, res) => {
   res.json({ data: orders })
 }
 
 // get one order
-const read = (req, res, next) => {
+const read = (req, res) => {
   res.json({ data: res.locals.order })
 }
 
 // post a new order
-const create = (req, res, next) => {
+const create = (req, res) => {
   const { order: { deliverTo, mobileNumber, status, dishes, } = {} } = res.locals
   const newOrder = {
     id: nextId(),
@@ -159,7 +160,7 @@ const create = (req, res, next) => {
 }
 
 // put: update an order
-const update = (req, res, next) => {
+const update = (req, res) => {
   const { orderId } = res.locals
   const { order: { deliverTo, mobileNumber, status, dishes } } = res.locals
   order = { 
@@ -173,7 +174,7 @@ const update = (req, res, next) => {
 }
 
 // delete an order
-const destroy = (req, res, next) => {
+const destroy = (req, res) => {
   const { orderId } = res.locals
   const index = orders.findIndex((order) => order.id === orderId);
   if (index > -1) {
@@ -187,5 +188,5 @@ module.exports = {
   read: [orderExists, read],
   create: [validateCreate, create],
   update: [validateUpdate, update],
-  destroy: [orderExists, statusIsPending, destroy],
+  destroy: [validateDestroy, destroy],
 }
