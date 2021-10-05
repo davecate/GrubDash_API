@@ -8,7 +8,7 @@ const nextId = require("../utils/nextId");
 
 // dish exists validator
 const dishExists = (req, res, next) => {
-  const dishId = req.params.dishId
+  const { dishId } = req.params
   const foundDish = dishes.find((dish) => dish.id === dishId)
   if (foundDish) {
     res.locals.dish = foundDish
@@ -16,14 +16,14 @@ const dishExists = (req, res, next) => {
   }
   next({
     status: 404, 
-    message: `Dish id not found: ${req.params.dishId}`,
+    message: `Dish id not found: ${dishId}`,
   })
 }
 
 // validation for dish properties
 // id validator
 const idMatches = (req, res, next) => {
-  const dishId = req.params.dishId
+  const { dishId } = req.params
   const { data: { id } } = req.body
   if (dishId === id) next()
   if (!id) next()
@@ -36,15 +36,21 @@ const idMatches = (req, res, next) => {
 // name validator
 const hasName = (req, res, next) => {
   const { data: { name } = {} } = req.body
-  if (name) next()
-  next({ status: 400, message: "A 'name' property is required." })
+  if (!name) next({ 
+    status: 400, 
+    message: "A 'name' property is required." 
+  })
+  next()
 }
 
 // description validator
 const hasDesc = (req, res, next) => {
   const { data: { description } = {} } = req.body
-  if (description) next()
-  next( { status: 400, message: "A 'description' property is required." } )
+  if (!description) next({ 
+    status: 400, 
+    message: "A 'description' property is required." 
+  })
+  next()
 }
 
 // img url validator
@@ -69,11 +75,11 @@ const priceIsRight = (req, res, next) => {
   next()
 }
 
-// containers for validators, organized by API call
-validateCreate = [hasName, hasDesc, hasImgUrl, priceIsRight]
-validateUpdate = [dishExists, idMatches, validateCreate]
+// containers for validators, organized by handler
+const validateCreate = [hasName, hasDesc, hasImgUrl, priceIsRight]
+const validateUpdate = [dishExists, idMatches, validateCreate]
 
-// API calls
+// API call handlers
 // get all dishes
 const list = (req, res, next) => {
   res.json( { data: dishes } )
@@ -95,15 +101,22 @@ const create = (req, res, next) => {
     image_url,
   }
   dishes.push(newDish)
-  res.status(201).json({ data: newDish })
+  res
+    .status(201)
+    .json({ data: newDish })
 }
 
 // put: update a dish
 const update = (req, res, next) => {
-  let dish = res.locals.dish
-  let { data: { id, name, description, price, image_url } = {} } = req.body
-  id = res.locals.dish.id
-  dish = { id, name, description, price, image_url }
+  const { dish: { id } } = res.locals
+  const { data: { name, description, price, image_url } = {} } = req.body
+  dish = { 
+    id, 
+    name, 
+    description, 
+    price, 
+    image_url 
+  }
   res.json({ data: dish })
 }
 
