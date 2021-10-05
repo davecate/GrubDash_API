@@ -9,11 +9,10 @@ const nextId = require("../utils/nextId");
 // order exists validator
 const orderExists = (req, res, next) => {
   res.locals.orderId = req.params.orderId
-  res.locals.order = req.body.data
   const { orderId } = res.locals
   const foundOrder = orders.find((order) => order.id === orderId)
   if (foundOrder) {
-    res.locals.foundOrder = foundOrder
+    res.locals.order = foundOrder
     next()
   }
   next({
@@ -25,6 +24,8 @@ const orderExists = (req, res, next) => {
 // all validation for order properties
 // id validator
 const idMatches = (req, res, next) => {
+  delete res.locals.order
+  res.locals.order = req.body.data
   const { orderId } = res.locals
   const { order: { id } } = res.locals
   if (orderId === id) next()
@@ -38,22 +39,22 @@ const idMatches = (req, res, next) => {
 // address (deliverTo) validator
 const hasDeliverTo = (req, res, next) => {
   if (!res.locals.order) res.locals.order = req.body.data
-  const { data: { deliverTo } = {} } = req.body
-  if (deliverTo) next()
-  next({ 
+  const { order: { deliverTo } = {} } = res.locals
+  if (!deliverTo) next({ 
     status: 400, 
     message: "A 'deliverTo' property is required." 
   })
+  next()
 }
 
 // mobile number validator
 const hasMobileNumber = (req, res, next) => {
   const { order: { mobileNumber } = {} } = res.locals
-  if (mobileNumber) next()
-  next({ 
+  if (!mobileNumber) next({ 
     status: 400, 
     message: "A 'mobileNumber' property is required." 
   })
+  next()
 }
 
 // dishes validator
@@ -68,7 +69,7 @@ const hasDishes = (req, res, next) => {
   next()
 }
 
-// dish quantity validator -- tests require different messages for each case
+// dish quantity validator
 const dishHasQuantity = (req, res, next) => {
   const { order: { dishes } } = res.locals
 
@@ -101,7 +102,8 @@ const dishHasQuantity = (req, res, next) => {
   next()
 }
 
-// status validator
+// status validators
+// hasStatus for post and put requests
 const hasStatus = (req, res, next) => {
   const { order: { status } } = res.locals
   const error = {
@@ -111,6 +113,18 @@ const hasStatus = (req, res, next) => {
   if (status === 'invalid') next(error)
   if (status) next()
   next(error)
+}
+
+// statusIsPending for delete requests
+const statusIsPending = (req, res, next) => {
+  const { order: { status } } = res.locals
+  if (status !== "pending") {
+    next({
+      status: 400,
+      message: `Order status must be 'pending'`
+    })
+  }
+  next()
 }
 
 // containers for validators, organized by handler
@@ -125,7 +139,7 @@ const list = (req, res, next) => {
 
 // get one order
 const read = (req, res, next) => {
-  res.json({ data: res.locals.foundOrder })
+  res.json({ data: res.locals.order })
 }
 
 // post a new order
@@ -161,18 +175,11 @@ const update = (req, res, next) => {
 // delete an order
 const destroy = (req, res, next) => {
   const { orderId } = res.locals
-  const { foundOrder: { status } } = res.locals
   const index = orders.findIndex((order) => order.id === orderId);
   if (index > -1) {
     orders.splice(index, 1);
-  }
-  if (status === "pending") {
     res.sendStatus(204)
   }
-  next({
-    status: 400,
-    message: `Order status must be 'pending'`
-  })
 }
 
 module.exports = {
@@ -180,5 +187,5 @@ module.exports = {
   read: [orderExists, read],
   create: [validateCreate, create],
   update: [validateUpdate, update],
-  destroy: [orderExists, destroy],
+  destroy: [orderExists, statusIsPending, destroy],
 }
