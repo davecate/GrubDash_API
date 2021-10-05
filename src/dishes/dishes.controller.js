@@ -12,7 +12,7 @@ const dishExists = (req, res, next) => {
   const { dishId } = res.locals
   const foundDish = dishes.find((dish) => dish.id === dishId)
   if (foundDish) {
-    res.locals.foundDish = foundDish
+    res.locals.dish = foundDish
     return next()
   }
   next({
@@ -24,7 +24,7 @@ const dishExists = (req, res, next) => {
 // validation for dish properties
 // id validator
 const idMatches = (req, res, next) => {
-  delete res.locals.foundDish
+  delete res.locals.dish
   res.locals.dish = req.body.data
   const { dishId } = res.locals
   const { dish: { id } } = res.locals
@@ -91,7 +91,7 @@ const list = (req, res) => {
 
 // get one dish
 const read = (req, res) => {
-  res.json( { data: res.locals.foundDish } )
+  res.json( { data: res.locals.dish } )
 }
 
 // post new dish
