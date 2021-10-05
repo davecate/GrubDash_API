@@ -144,7 +144,7 @@ const read = (req, res, next) => {
 
 // post a new order
 const create = (req, res, next) => {
-  const { data: { deliverTo, mobileNumber, status, dishes, } = {} } = req.body
+  const { order: { deliverTo, mobileNumber, status, dishes, } = {} } = res.locals
   const newOrder = {
     id: nextId(),
     deliverTo,
@@ -161,7 +161,7 @@ const create = (req, res, next) => {
 // put: update an order
 const update = (req, res, next) => {
   const { orderId } = res.locals
-  const { data: { deliverTo, mobileNumber, status, dishes } } = req.body
+  const { order: { deliverTo, mobileNumber, status, dishes } } = res.locals
   order = { 
     id: orderId, 
     deliverTo, 
