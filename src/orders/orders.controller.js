@@ -24,7 +24,6 @@ const orderExists = (req, res, next) => {
 // all validation for order properties
 // id validator
 const idMatches = (req, res, next) => {
-  delete res.locals.order
   res.locals.order = req.body.data
   const { orderId } = res.locals
   const { order: { id } } = res.locals

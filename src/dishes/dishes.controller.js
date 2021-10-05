@@ -24,7 +24,6 @@ const dishExists = (req, res, next) => {
 // validation for dish properties
 // id validator
 const idMatches = (req, res, next) => {
-  delete res.locals.dish
   res.locals.dish = req.body.data
   const { dishId } = res.locals
   const { dish: { id } } = res.locals
