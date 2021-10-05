@@ -8,10 +8,12 @@ const nextId = require("../utils/nextId");
 
 // order exists validator
 const orderExists = (req, res, next) => {
-  const { orderId } = req.params
+  res.locals.orderId = req.params.orderId
+  res.locals.order = req.body.data
+  const { orderId } = res.locals
   const foundOrder = orders.find((order) => order.id === orderId)
   if (foundOrder) {
-    res.locals.order = foundOrder
+    res.locals.foundOrder = foundOrder
     next()
   }
   next({
@@ -23,8 +25,8 @@ const orderExists = (req, res, next) => {
 // all validation for order properties
 // id validator
 const idMatches = (req, res, next) => {
-  const { orderId } = req.params
-  const { data: { id } } = req.body
+  const { orderId } = res.locals
+  const { order: { id } } = res.locals
   if (orderId === id) next()
   if (!id) next()
   next({ 
@@ -35,6 +37,7 @@ const idMatches = (req, res, next) => {
 
 // address (deliverTo) validator
 const hasDeliverTo = (req, res, next) => {
+  if (!res.locals.order) res.locals.order = req.body.data
   const { data: { deliverTo } = {} } = req.body
   if (deliverTo) next()
   next({ 
@@ -45,7 +48,7 @@ const hasDeliverTo = (req, res, next) => {
 
 // mobile number validator
 const hasMobileNumber = (req, res, next) => {
-  const { data: { mobileNumber } = {} } = req.body
+  const { order: { mobileNumber } = {} } = res.locals
   if (mobileNumber) next()
   next({ 
     status: 400, 
@@ -55,7 +58,7 @@ const hasMobileNumber = (req, res, next) => {
 
 // dishes validator
 const hasDishes = (req, res, next) => {
-  const { data: { dishes } = {} } = req.body
+  const { order: { dishes } = {} } = res.locals
   if (!dishes || !dishes.length || Array.isArray(dishes) === false) {
     next({ 
       status: 400, 
@@ -67,7 +70,7 @@ const hasDishes = (req, res, next) => {
 
 // dish quantity validator -- tests require different messages for each case
 const dishHasQuantity = (req, res, next) => {
-  const { data: { dishes } } = req.body
+  const { order: { dishes } } = res.locals
 
   for (dish of dishes) {
     const message = `A valid 'quantity' property of 1 or more is required for each dish.`
@@ -100,7 +103,7 @@ const dishHasQuantity = (req, res, next) => {
 
 // status validator
 const hasStatus = (req, res, next) => {
-  const { data: { status } } = req.body
+  const { order: { status } } = res.locals
   const error = {
     status: 400,
     message: `A valid 'status' property is required.`
@@ -122,7 +125,7 @@ const list = (req, res, next) => {
 
 // get one order
 const read = (req, res, next) => {
-  res.json({ data: res.locals.order })
+  res.json({ data: res.locals.foundOrder })
 }
 
 // post a new order
@@ -143,10 +146,10 @@ const create = (req, res, next) => {
 
 // put: update an order
 const update = (req, res, next) => {
-  const { order: { id } } = res.locals
+  const { orderId } = res.locals
   const { data: { deliverTo, mobileNumber, status, dishes } } = req.body
   order = { 
-    id, 
+    id: orderId, 
     deliverTo, 
     mobileNumber, 
     status, 
@@ -157,13 +160,13 @@ const update = (req, res, next) => {
 
 // delete an order
 const destroy = (req, res, next) => {
-  const { orderId } = req.params
-  const { order } = res.locals
+  const { orderId } = res.locals
+  const { foundOrder: { status } } = res.locals
   const index = orders.findIndex((order) => order.id === orderId);
   if (index > -1) {
     orders.splice(index, 1);
   }
-  if (order.status === "pending") {
+  if (status === "pending") {
     res.sendStatus(204)
   }
   next({

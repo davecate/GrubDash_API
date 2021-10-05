@@ -8,10 +8,11 @@ const nextId = require("../utils/nextId");
 
 // dish exists validator
 const dishExists = (req, res, next) => {
-  const { dishId } = req.params
+  res.locals.dishId = req.params.dishId
+  const { dishId } = res.locals
   const foundDish = dishes.find((dish) => dish.id === dishId)
   if (foundDish) {
-    res.locals.dish = foundDish
+    res.locals.foundDish = foundDish
     return next()
   }
   next({
@@ -23,8 +24,10 @@ const dishExists = (req, res, next) => {
 // validation for dish properties
 // id validator
 const idMatches = (req, res, next) => {
-  const { dishId } = req.params
-  const { data: { id } } = req.body
+  delete res.locals.foundDish
+  res.locals.dish = req.body.data
+  const { dishId } = res.locals
+  const { dish: { id } } = res.locals
   if (dishId === id) next()
   if (!id) next()
   next({ 
@@ -35,7 +38,8 @@ const idMatches = (req, res, next) => {
 
 // name validator
 const hasName = (req, res, next) => {
-  const { data: { name } = {} } = req.body
+  if (!res.locals.dish) res.locals.dish = req.body.data
+  const { dish: { name } = {} } = res.locals
   if (!name) next({ 
     status: 400, 
     message: "A 'name' property is required." 
@@ -45,7 +49,7 @@ const hasName = (req, res, next) => {
 
 // description validator
 const hasDesc = (req, res, next) => {
-  const { data: { description } = {} } = req.body
+  const { dish: { description } = {} } = res.locals
   if (!description) next({ 
     status: 400, 
     message: "A 'description' property is required." 
@@ -55,7 +59,7 @@ const hasDesc = (req, res, next) => {
 
 // img url validator
 const hasImgUrl = (req, res, next) => {
-  const { data: { image_url } = {} } = req.body
+  const { dish: { image_url } = {} } = res.locals
   if (!image_url) next( { 
     status: 400, 
     message: "An 'image_url' property is required." 
@@ -65,7 +69,7 @@ const hasImgUrl = (req, res, next) => {
 
 // price validator
 const priceIsRight = (req, res, next) => {
-  const { data: { price } = {} } = req.body
+  const { dish: { price } = {} } = res.locals
   const priceIsWrong = { 
     status: 400, 
     message: "A 'price' property greater than 0 is required." 
@@ -81,37 +85,37 @@ const validateUpdate = [dishExists, idMatches, validateCreate]
 
 // API call handlers
 // get all dishes
-const list = (req, res, next) => {
+const list = (req, res) => {
   res.json( { data: dishes } )
 }
 
 // get one dish
-const read = (req, res, next) => {
-  res.json( { data: res.locals.dish } )
+const read = (req, res) => {
+  res.json( { data: res.locals.foundDish } )
 }
 
 // post new dish
-const create = (req, res, next) => {
-  const { data: { name, description, price, image_url } = {} } = req.body
-  const newDish = {
+const create = (req, res) => {
+  const { dish: { name, description, price, image_url } } = res.locals
+  dish = {
     id: nextId(),
     name,
     description,
     price,
     image_url,
   }
-  dishes.push(newDish)
+  dishes.push(dish)
   res
     .status(201)
-    .json({ data: newDish })
+    .json({ data: dish })
 }
 
 // put: update a dish
-const update = (req, res, next) => {
-  const { dish: { id } } = res.locals
-  const { data: { name, description, price, image_url } = {} } = req.body
+const update = (req, res) => {
+  const { dishId } = res.locals
+  const { dish: { name, description, price, image_url } = {} } = res.locals
   dish = { 
-    id, 
+    id: dishId, 
     name, 
     description, 
     price, 
