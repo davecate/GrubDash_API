@@ -1,4 +1,5 @@
 # GrubDash API Project
 
-Bootcamp project: a mock-up of a food delivery app with a functioning API, allowing users to create orders by selecting dishes from a menu.
-The project demonstrates intermediate API capabilities of Node.js and Express.js while adhering to the design principles of representational state transfer (REST).
+Bootcamp project: the back-end of a fictional food app, GrubDash. Demonstrates intermediate API capabilities of Node.js and Express.js while adhering to the design principles of representational state transfer (REST). Uses two datasets: Orders and Dishes.
+
+Back-end users can view one order or all orders, create new orders, update and/or delete existing orders — same for dishes.
